@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Bloc de Notas Rosita 🌸</title>
+    <style>
+        /* Variables de color para el tema rosita */
+        :root {
+            --bg-principal: #fff0f5; /* Lavender Blush */
+            --bg-bloc: #ffffff;
+            --rosa-oscuro: #ffb6c1; /* Light Pink */
+            --rosa-medio: #ffc0cb;
+            --rosa-pastel: #ffe4e1; /* Misty Rose */
+            --texto: #4a3b32;
+            --texto-light: #8b7373;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-principal);
+            color: var(--texto);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* Contenedor Principal con diseño de dos columnas */
+        .notepad-container {
+            width: 95%;
+            max-width: 850px;
+            height: 85vh;
+            background-color: var(--bg-bloc);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(255, 182, 193, 0.4);
+            display: flex;
+            overflow: hidden;
+            border: 2px solid var(--rosa-oscuro);
+        }
+
+        /* BARRA LATERAL (La Carpeta de Notas) */
+        .sidebar {
+            width: 30%;
+            background-color: var(--rosa-pastel);
+            border-right: 2px solid var(--rosa-oscuro);
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+        }
+
+        .btn-nuevo {
+            background-color: var(--rosa-oscuro);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        .btn-nuevo:hover {
+            background-color: #ffa6b5;
+        }
+
+        .lista-notas {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .item-nota {
+            background-color: white;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid transparent;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .item-nota:hover {
+            border-color: var(--rosa-oscuro);
+            transform: translateY(-2px);
+        }
+
+        .item-nota.activa {
+            background-color: var(--rosa-oscuro);
+            color: white;
+            font-weight: bold;
+        }
+
+        .btn-borrar {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--texto-light);
+        }
+        .item-nota.activa .btn-borrar {
+            color: white;
+        }
+
+        /* ÁREA DE EDICIÓN (Derecha) */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: white;
+        }
+
+        .notepad-header {
+            background-color: #fff9fa;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--rosa-pastel);
+        }
+
+        .input-titulo {
+            border: none;
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--texto);
+            outline: none;
+            width: 70%;
+            background: transparent;
+        }
+
+        .status-tag {
+            font-size: 0.8rem;
+            color: var(--texto-light);
+            background-color: var(--rosa-pastel);
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .notepad-textarea {
+            flex: 1;
+            border: none;
+            padding: 20px;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+            color: var(--texto);
+            background-color: white;
+        }
+
+        .notepad-footer {
+            background-color: #fff9fa;
+            padding: 10px 20px;
+            font-size: 0.85rem;
+            color: var(--texto-light);
+            text-align: right;
+            border-top: 1px solid var(--rosa-pastel);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="notepad-container">
+        <!-- Barra lateral tipo carpeta -->
+        <div class="sidebar">
+            <button class="btn-nuevo" id="btn-nuevo">✨ Nueva Nota</button>
+            <div class="lista-notas" id="lista-notas">
+                <!-- Las notas guardadas aparecerán aquí dinámicamente -->
+            </div>
+        </div>
+
+        <!-- Contenido de la nota actual -->
+        <div class="main-content">
+            <div class="notepad-header">
+                <input type="text" id="note-title" class="input-titulo" placeholder="Título de la nota...">
+                <span id="status" class="status-tag">Guardado</span>
+            </div>
+            
+            <textarea id="note-area" class="notepad-textarea" placeholder="Escribe tu nota aquí...🌸"></textarea>
+            
+            <div class="notepad-footer">
+                <span id="char-count">0 caracteres</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Elementos de la interfaz
+        const btnNuevo = document.getElementById('btn-nuevo');
+        const listaNotas = document.getElementById('lista-notas');
+        const noteTitle = document.getElementById('note-title');
+        const noteArea = document.getElementById('note-area');
+        const statusTag = document.getElementById('status');
+        const charCount = document.getElementById('char-count');
+
+        // Estructura de datos: Array que guardará objetos { id, titulo, contenido }
+        let notas = JSON.parse(localStorage.getItem('carpeta_notas')) || [];
+        let idNotaActiva = localStorage.getItem('id_nota_activa') || null;
+
+        // --- FUNCIONES PRINCIPALES ---
+
+        // 1. Renderizar la lista de notas en la barra lateral
+        function actualizarListaLateral() {
+            listaNotas.innerHTML = ''; // Limpiar lista
+            
+            if (notas.length === 0) {
+                listaNotas.innerHTML = '<p style="text-align:center; font-size:0.85rem; color:var(--texto-light);">No hay notas guardadas</p>';
+                return;
+            }
+
+            notas.forEach(nota => {
+                const item = document.createElement('div');
+                item.classList.add('item-nota');
+                if (nota.id === idNotaActiva) item.classList.add('activa');
+
+                // Mostrar el título o un texto por defecto si está vacío
+                const tituloMostrar = nota.titulo.trim() || "Nota sin título 🐾";
+                
+                item.innerHTML = `
+                    <span onclick="seleccionarNota('${nota.id}')" style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        ${tituloMostrar}
+                    </span>
+                    <button class="btn-borrar" onclick="borrarNota('${nota.id}', event)">✕</button>
+                `;
+                listaNotas.appendChild(item);
+            });
+        }
+
+        // 2. Crear una nueva nota en blanco
+        function crearNuevaNota() {
+            const nuevaNota = {
+                id: Date.now().toString(), // Identificador único basado en el tiempo
+                titulo: '',
+                contenido: ''
+            };
+            notas.unshift(nuevaNota); // Añadir al principio de la lista
+            idNotaActiva = nuevaNota.id;
+            
+            guardarEnStorage();
+            cargarNotaActiva();
+            actualizarListaLateral();
+        }
+
+        // 3. Cargar los datos de la nota activa en los inputs
+        function cargarNotaActiva() {
+            const nota = notas.find(n => n.id === idNotaActiva);
+            
+            if (nota) {
+                noteTitle.value = nota.titulo;
+                noteArea.value = nota.contenido;
+                noteTitle.disabled = false;
+                noteArea.disabled = false;
+                actualizarContador();
+            } else {
+                // Si no hay ninguna nota seleccionada
+                noteTitle.value = 'Selecciona o crea una nota';
+                noteArea.value = '';
+                noteTitle.disabled = true;
+                noteArea.disabled = true;
+                charCount.textContent = '0 caracteres';
+            }
+        }
+
+        // 4. Seleccionar una nota de la lista
+        window.seleccionarNota = function(id) {
+            idNotaActiva = id;
+            localStorage.setItem('id_nota_activa', idNotaActiva);
+            cargarNotaActiva();
+            actualizarListaLateral();
+        }
+
+        // 5. Borrar una nota
+        window.borrarNota = function(id, evento) {
+            evento.stopPropagation(); // Evita que se seleccione la nota al hacer clic en la X
+            
+            notas = notas.filter(n => n.id !== id);
+            
+            if (idNotaActiva === id) {
+                idNotaActiva = notas.length > 0 ? notas[0].id : null;
+            }
+            
+            guardarEnStorage();
+            cargarNotaActiva();
+            actualizarListaLateral();
+        }
+
+        // 6. Guardar los datos en el LocalStorage
+        function guardarEnStorage() {
+            localStorage.setItem('carpeta_notas', JSON.stringify(notas));
+            localStorage.setItem('id_nota_activa', idNotaActiva);
+        }
+
+        // Función para contar caracteres
+        function actualizarContador() {
+            charCount.textContent = `${noteArea.value.length} caracteres`;
+        }
+
+        // --- EVENTOS (Escuchar cambios) ---
+
+        // Guardado automático al escribir en el título o en el área de texto
+        function guardarAutomatico() {
+            statusTag.textContent = 'Guardando...';
+            
+            const nota = notas.find(n => n.id === idNotaActiva);
+            if (nota) {
+                nota.titulo = noteTitle.value;
+                nota.contenido = noteArea.value;
+                guardarEnStorage();
+                actualizarContador();
+                
+                // Actualizar la lista lateral para que refleje el cambio de título de inmediato
+                actualizarListaLateral();
+            }
+
+            setTimeout(() => {
+                statusTag.textContent = 'Guardado';
+            }, 400);
+        }
+
+        noteArea.addEventListener('input', guardarAutomatico);
+        noteTitle.addEventListener('input', guardarAutomatico);
+        btnNuevo.addEventListener('click', crearNuevaNota);
+
+        // --- INICIALIZACIÓN AL ABRIR LA PÁGINA ---
+        if (notas.length > 0 && !idNotaActiva) {
+            idNotaActiva = notas[0].id;
+        }
+        
+        actualizarListaLateral();
+        cargarNotaActiva();
+    </script>
+</body>
+</html>
